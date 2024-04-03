@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3 uid="uid://dn2tctqx1pe8k"]
+
+[ext_resource type="Script" path="res://Scripts/UI/Enter Name Window.gd" id="1_kwy0w"]
+
+[node name="Enter Name Window" type="PanelContainer" node_paths=PackedStringArray("submit_button")]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -265.0
+offset_top = -34.0
+offset_right = 266.0
+offset_bottom = 79.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_kwy0w")
+submit_button = NodePath("MarginContainer/VBoxContainer/Submit Button")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Enter your Name!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Your Name"
+alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Role:"
+
+[node name="Role Selector" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+item_count = 2
+popup/item_0/text = "Player"
+popup/item_0/id = 0
+popup/item_1/text = "Spectator"
+popup/item_1/id = 1
+
+[node name="Submit Button" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+disabled = true
+text = "Submit"
+
+[connection signal="text_changed" from="MarginContainer/VBoxContainer/LineEdit" to="." method="_on_line_edit_text_changed"]
+[connection signal="item_selected" from="MarginContainer/VBoxContainer/HBoxContainer/Role Selector" to="." method="_on_role_selector_item_selected"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/Submit Button" to="." method="_on_submit_button_pressed"]

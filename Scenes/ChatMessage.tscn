@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://cc680ta1uqi4p"]
+
+[ext_resource type="Script" path="res://Scripts/UI/Chat Message.gd" id="1_i8eap"]
+
+[node name="Chat Message" type="RichTextLabel"]
+bbcode_enabled = true
+text = "Ok now I wanna see how it wraps around with a rich text label. But it seems fine owo"
+fit_content = true
+script = ExtResource("1_i8eap")

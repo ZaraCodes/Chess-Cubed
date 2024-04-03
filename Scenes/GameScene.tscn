@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3 uid="uid://bpvtcqmgvee3y"]
+
+[ext_resource type="PackedScene" uid="uid://82y4p7f12rmt" path="res://Scenes/ChatContainer.tscn" id="1_38qva"]
+[ext_resource type="PackedScene" uid="uid://dn2tctqx1pe8k" path="res://Scenes/EnterNameWindow.tscn" id="2_hqs6p"]
+
+[node name="GameScene" type="Node3D"]
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Chat Container" parent="Control" instance=ExtResource("1_38qva")]
+visible = false
+layout_mode = 1
+
+[node name="Enter Name Window" parent="Control" instance=ExtResource("2_hqs6p")]
+layout_mode = 1
+offset_left = -265.5
+offset_top = -64.0
+offset_right = 265.5
+offset_bottom = 64.0

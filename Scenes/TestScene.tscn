@@ -1,0 +1,100 @@
+[gd_scene load_steps=6 format=3 uid="uid://8iymmfoeys4d"]
+
+[ext_resource type="Script" path="res://Scripts/websocket/WebSocketServer.gd" id="1_7fxn4"]
+[ext_resource type="Script" path="res://Scripts/websocket/WebSocketClient.gd" id="1_vjuv5"]
+[ext_resource type="Script" path="res://Scripts/UI/JoinHostMenu.gd" id="1_yol0f"]
+[ext_resource type="Script" path="res://Scripts/Server.gd" id="2_vnwyy"]
+[ext_resource type="Script" path="res://Scripts/Client.gd" id="3_gna8s"]
+
+[node name="Base Scene" type="Node3D"]
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(400, 400)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -200.0
+offset_right = 200.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+script = ExtResource("1_yol0f")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Host Button" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Host"
+
+[node name="Label" type="Label" parent="PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "  Port:"
+
+[node name="Port Edit" type="LineEdit" parent="PanelContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+placeholder_text = "eg. 8002"
+virtual_keyboard_type = 2
+caret_blink = true
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Join Button" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Join
+"
+
+[node name="URL Edit" type="LineEdit" parent="PanelContainer/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+placeholder_text = "Enter Link"
+caret_blink = true
+
+[node name="Server" type="Node" parent="." node_paths=PackedStringArray("wss")]
+script = ExtResource("2_vnwyy")
+wss = NodePath("Websocket Server")
+
+[node name="Websocket Server" type="Node" parent="Server"]
+script = ExtResource("1_7fxn4")
+supported_protocols = PackedStringArray("chess_cubed")
+
+[node name="Client" type="Node" parent="." node_paths=PackedStringArray("wsc")]
+script = ExtResource("3_gna8s")
+wsc = NodePath("Websocket Client")
+
+[node name="Websocket Client" type="Node" parent="Client"]
+script = ExtResource("1_vjuv5")
+supported_protocols = PackedStringArray("chess_cubed")
+
+[connection signal="host_button_pressed" from="PanelContainer" to="Server" method="start_server"]
+[connection signal="join_button_pressed" from="PanelContainer" to="Client" method="connect_to_server"]
+[connection signal="port_changed" from="PanelContainer" to="Server" method="_on_panel_container_port_changed"]
+[connection signal="url_changed" from="PanelContainer" to="Client" method="_on_panel_container_url_changed"]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/HBoxContainer/Host Button" to="PanelContainer" method="_on_host_button_pressed"]
+[connection signal="text_changed" from="PanelContainer/VBoxContainer/HBoxContainer/Port Edit" to="PanelContainer" method="_on_port_edit_text_changed"]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/HBoxContainer2/Join Button" to="PanelContainer" method="_on_join_button_pressed"]
+[connection signal="text_changed" from="PanelContainer/VBoxContainer/HBoxContainer2/URL Edit" to="PanelContainer" method="_on_url_edit_text_changed"]
+[connection signal="start_server_command_received" from="Server" to="Server/Websocket Server" method="listen"]
+[connection signal="client_connected" from="Server/Websocket Server" to="Server" method="_on_client_connected"]
+[connection signal="client_disconnected" from="Server/Websocket Server" to="Server" method="_on_client_disconnected"]
+[connection signal="message_received" from="Server/Websocket Server" to="Server" method="_on_message_received"]
+[connection signal="server_listening" from="Server/Websocket Server" to="Server" method="_on_server_listening"]
+[connection signal="server_listening" from="Server/Websocket Server" to="Client" method="_on_websocket_server_server_listening"]
+[connection signal="connected_to_server" from="Client" to="PanelContainer" method="_on_client_connected_to_server"]
+[connection signal="on_player_exists" from="Client" to="Client/Websocket Client" method="_on_client_on_player_exists"]
+[connection signal="connected_to_server" from="Client/Websocket Client" to="Client" method="_on_server_connected"]
+[connection signal="connection_closed" from="Client/Websocket Client" to="Client" method="_on_connection_closed"]
+[connection signal="connection_failed" from="Client/Websocket Client" to="Client" method="_on_connection_failed"]
+[connection signal="message_received" from="Client/Websocket Client" to="Client" method="_on_message_received"]
