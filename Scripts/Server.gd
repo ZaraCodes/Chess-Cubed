@@ -9,6 +9,7 @@ signal start_server_command_received(port: int)
 var port: int
 var players := { 197356: { "player_name": "Blara", "role": Enums.PlayerRole.SPECTATOR } }
 
+var game_state := {}
 
 func start_server():
 	if port > 0:
@@ -29,6 +30,8 @@ func _on_message_received(peer_id: int, message: Variant):
 			handle_add_player(peer_id, message)
 		elif message["type"] == Enums.MessageType.CHAT_MESSAGE:
 			handle_incoming_chat_message(peer_id, message)
+		elif message["type"] == Enums.MessageType.MOVE:
+			handle_move_message(peer_id, message)
 
 func handle_player_exists(peer_id: int, message: Variant):
 	if not message.has("player_name") or does_player_exist(message["player_name"]):
@@ -76,6 +79,33 @@ func handle_incoming_chat_message(peer_id: int, message: Variant):
 	else:
 		response = { "type": Enums.MessageType.CHAT_MESSAGE, "message": { "player_name": players[peer_id]["player_name"], "text": message["text"] } }
 		send_to_players(response)
+
+func handle_move_message(peer_id: int, message: Variant):
+	if not message.has("move_type") and not message.has("move_data"):
+		print_rich("[b][color=red]Move type or move data missing")
+		return  # this should probably notify the client that their message was faulty
+	
+	if message["move_type"] == Enums.MoveType.SLICE:
+		if not message["move_data"].has("axis") or not message["move_data"].has("slice_index") or not message["move_data"].has("direction"):
+			print_rich("[b][color=red]axis or slice_index or direction missing")
+			return
+		
+		print("AM I HERE??")
+		# add check if player has slice moves available
+		var new_game_state := {
+			"type": Enums.MessageType.GAME_STATE,
+			"old_state": "todo",
+			"new_state": "todo",
+			"move_type": Enums.MoveType.SLICE,
+			"move_data": {
+				"slice_index": message["move_data"]["slice_index"],
+				"axis": message["move_data"]["axis"],
+				"direction": message["move_data"]["direction"]
+			}
+		}
+		send_to_players(new_game_state)
+	else:
+		print("MVOE TYPE?????? WHY ARE YOU NOT SLICE??????????")
 
 func _on_client_connected(peer_id: int):
 	print("Client %s connected" % peer_id)

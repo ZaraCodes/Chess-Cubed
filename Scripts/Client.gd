@@ -10,6 +10,7 @@ signal show_chat_window()
 signal player_count_is_valid(value: bool)
 signal send_join_message(data: Dictionary)
 signal send_chat_message(data: Dictionary)
+signal slice_move(axis: String, slice_index: int)
 
 static var client_ref: Client
 var peer_id: int
@@ -17,6 +18,8 @@ var peer_id: int
 ## Websocket Client
 @export var wsc: WebSocketClient
 
+# distribute old state + move = new state
+var turn_sequence := []
 
 var url: String
 
@@ -54,6 +57,8 @@ func _on_message_received(message: Variant):
 			handle_join_message(message)
 		if message["type"] == Enums.MessageType.CHAT_MESSAGE:
 			handle_incoming_chat_message(message)
+		if message["type"] == Enums.MessageType.GAME_STATE:
+			handle_incoming_game_state_message(message)
 
 func handle_player_exists(message: Dictionary):
 	if message.has("value"):
@@ -99,6 +104,27 @@ func handle_incoming_chat_message(message: Dictionary):
 		return
 	send_chat_message.emit(message["message"])
 
+func handle_incoming_game_state_message(message: Dictionary):
+	if not message.has("move_type") or not message.has("move_data"):
+		return
+	
+	# check game state with what was sent
+	
+	if message["move_type"] == Enums.MoveType.SLICE:
+		if not message["move_data"].has("axis") or not message["move_data"].has("slice_index"):
+			return
+		var axis
+		var slice_index :int = message["move_data"]["slice_index"]
+		match message["move_data"]["axis"]:
+			Enums.SliceAxis.X:
+				axis = "x"
+			Enums.SliceAxis.Y:
+				axis = "y"
+			Enums.SliceAxis.Z:
+				axis = "z"
+		var direction = message["move_data"]["direction"]
+		slice_move.emit(axis, slice_index, direction)
+
 func on_player_submitted_button_pressed(player_name: String, role: Enums.PlayerRole):
 	var request = { "type": Enums.MessageType.ADD_PLAYER, "player_name": player_name, "role": role }
 	wsc.send(request)
@@ -127,4 +153,25 @@ func on_new_player_role_changed(role: Enums.PlayerRole):
 
 func on_chat_message_submitted(text: String):
 	var data := { "type": Enums.MessageType.CHAT_MESSAGE, "text": text }
+	wsc.send(data)
+
+func on_cube_slice_turned(axis: String, slice_index: int, direction: int):
+	var axis_as_enum
+	match axis:
+		"x":
+			axis_as_enum = Enums.SliceAxis.X
+		"y":
+			axis_as_enum = Enums.SliceAxis.Y
+		"z":
+			axis_as_enum = Enums.SliceAxis.Z
+	
+	var data := {
+		"type": Enums.MessageType.MOVE,
+		"move_type": Enums.MoveType.SLICE,
+		"move_data": {
+			"axis": axis_as_enum,
+			"slice_index": slice_index,
+			"direction": direction
+		}
+	}
 	wsc.send(data)

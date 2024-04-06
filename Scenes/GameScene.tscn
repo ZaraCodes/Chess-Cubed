@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://bpvtcqmgvee3y"]
+[gd_scene load_steps=9 format=3 uid="uid://bpvtcqmgvee3y"]
 
 [ext_resource type="PackedScene" uid="uid://82y4p7f12rmt" path="res://Scenes/ChatContainer.tscn" id="1_38qva"]
 [ext_resource type="PackedScene" uid="uid://dn2tctqx1pe8k" path="res://Scenes/EnterNameWindow.tscn" id="2_hqs6p"]
 [ext_resource type="Script" path="res://Scripts/Chess Cube.gd" id="3_mshm1"]
+[ext_resource type="Script" path="res://Scripts/Slice Turn UI Box.gd" id="3_p7b46"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_lju31"]
 sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
@@ -46,27 +47,27 @@ visible = false
 layout_mode = 1
 
 [node name="Enter Name Window" parent="Control" instance=ExtResource("2_hqs6p")]
-visible = false
 layout_mode = 1
 offset_left = -265.5
 offset_top = -64.0
 offset_right = 265.5
 offset_bottom = 64.0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control"]
+[node name="Slice Turn UI Box" type="HBoxContainer" parent="Control"]
 layout_mode = 0
-offset_right = 319.0
+offset_right = 200.0
 offset_bottom = 40.0
+script = ExtResource("3_p7b46")
 
-[node name="Button" type="Button" parent="Control/HBoxContainer"]
+[node name="Button" type="Button" parent="Control/Slice Turn UI Box"]
 layout_mode = 2
 text = "Turn!!"
 
-[node name="SpinBox" type="SpinBox" parent="Control/HBoxContainer"]
+[node name="SpinBox" type="SpinBox" parent="Control/Slice Turn UI Box"]
 layout_mode = 2
 max_value = 7.0
 
-[node name="OptionButton" type="OptionButton" parent="Control/HBoxContainer"]
+[node name="OptionButton" type="OptionButton" parent="Control/Slice Turn UI Box"]
 layout_mode = 2
 item_count = 3
 selected = 0
@@ -76,6 +77,9 @@ popup/item_1/text = "Y"
 popup/item_1/id = 1
 popup/item_2/text = "Z"
 popup/item_2/id = 2
+
+[node name="CheckBox" type="CheckBox" parent="Control/Slice Turn UI Box"]
+layout_mode = 2
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 10.6406, 12.1137, 10.6406)
@@ -87,4 +91,10 @@ curve = SubResource("Curve_t84j1")
 
 [node name="Rotator" type="Node3D" parent="Chess Cube"]
 
-[connection signal="pressed" from="Control/HBoxContainer/Button" to="Chess Cube" method="_on_turn_button_pressed"]
+[node name="Small Cubes" type="Node3D" parent="Chess Cube"]
+
+[connection signal="pressed" from="Control/Slice Turn UI Box/Button" to="Chess Cube" method="_on_turn_button_pressed"]
+[connection signal="value_changed" from="Control/Slice Turn UI Box/SpinBox" to="Chess Cube" method="_on_slice_updated"]
+[connection signal="item_selected" from="Control/Slice Turn UI Box/OptionButton" to="Chess Cube" method="_on_axis_selected"]
+[connection signal="toggled" from="Control/Slice Turn UI Box/CheckBox" to="Chess Cube" method="_on_check_box_toggled"]
+[connection signal="incoming_slice_turn" from="Chess Cube" to="Control/Slice Turn UI Box" method="update_ui_elements"]

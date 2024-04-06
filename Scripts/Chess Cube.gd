@@ -15,6 +15,24 @@ var board_z_down := []
 
 var cube_slices := {}
 
+var selected_axis: String
+var slice: int
+var turn_sign: float
+
+signal slice_turned(axis: String, slice_index: int, direction: int)
+signal incoming_slice_turn(axis: String, slice_index: int, direction: int)
+
+func _on_axis_selected(value: int):
+	match value:
+		0:
+			selected_axis = "x"
+		1:
+			selected_axis = "y"
+		2:
+			selected_axis = "z"
+
+func _on_slice_updated(value: float):
+	slice = int(value)
 
 func generate_cube(size: int):
 	for x in range(size):
@@ -41,9 +59,11 @@ func generate_cube(size: int):
 						var tile = cube.add_tile(Vector3i(0, 0, 1), Vector2i(x, y))
 						board_z_up.append(tile)
 					
-					cube.position = Vector3(x - size / 2.0 + 0.5, y - size / 2.0 + 0.5, z - size / 2.0 + 0.5)
+					#cube.position = Vector3(x - size / 2.0 + 0.5, y - size / 2.0 + 0.5, z - size / 2.0 + 0.5)
+					$Rotator.position = Vector3((size - 1) / 2.0, (size - 1) / 2.0, (size - 1) / 2.0)
+					cube.position = Vector3(x, y, z)
 					add_cube_to_slices(cube, x, y, z)
-					add_child(cube)
+					$"Small Cubes".add_child(cube)
 
 func add_cube_to_slices(cube: Node3D, x: int, y: int, z: int):
 	if not cube_slices.has("x"):
@@ -64,16 +84,52 @@ func add_cube_to_slices(cube: Node3D, x: int, y: int, z: int):
 	cube_slices["y"][y].append(cube)
 	cube_slices["z"][z].append(cube)
 
+func recalculate_slices_of_cubes():
+	cube_slices.clear()
+	cube_slices["x"] = {}
+	cube_slices["y"] = {}
+	cube_slices["z"] = {}
+	
+	for cube: Node3D in $"Small Cubes".get_children():
+		var x := int(round(cube.position.x))
+		var y := int(round(cube.position.y))
+		var z := int(round(cube.position.z))
+		
+		if not cube_slices["x"].has(x):
+			cube_slices["x"][x] = []
+		if not cube_slices["y"].has(y):
+			cube_slices["y"][y] = []
+		if not cube_slices["z"].has(z):
+			cube_slices["z"][z] = []
+		
+		cube_slices["x"][x].append(cube)
+		cube_slices["y"][y].append(cube)
+		cube_slices["z"][z].append(cube)
+
 func add_slice_to_rotator(axis: String, layer: int):
-	for element in cube_slices[axis][layer]:
-		remove_child(element)
-		$Rotator.add_child(element)
+	for node in cube_slices[axis][layer]:
+		var global_pos = node.global_position
+		var global_rot = node.global_rotation
+		$"Small Cubes".remove_child(node)
+		$Rotator.add_child(node)
+		node.global_position = global_pos
+		node.global_rotation = global_rot
 
 func is_on_edge(size: int, value: int):
 	return value == 0 or value == size - 1
 
-func start_slice_turn(axis: String, layer: int):
-	add_slice_to_rotator(axis, layer)
+func start_slice_turn():
+	turning = true
+	add_slice_to_rotator(selected_axis, slice)
+	turn_progress = 0.0
+	match selected_axis:
+		"x":
+			turning_direction = Vector3(1, 0, 0)
+		"y":
+			turning_direction = Vector3(0, 1, 0)
+		"z":
+			turning_direction = Vector3(0, 0, 1)
+	turning_direction *= turn_sign
 
 func turn_slice(delta: float):
 	turn_progress += delta / 2.0
@@ -85,20 +141,50 @@ func end_slice_turn():
 	$Rotator.rotation_degrees = turning_direction * 90
 	turning = false
 	print_rich("[color=green]turn finished")
-	pass
+	for node: Node3D in $Rotator.get_children():
+		var global_pos = node.global_position
+		var global_rot = node.global_rotation
+		$Rotator.remove_child(node)
+		$"Small Cubes".add_child(node)
+		node.global_position = global_pos
+		node.global_rotation = global_rot
+	$Rotator.rotation = Vector3.ZERO
+	recalculate_slices_of_cubes()
 
 func _on_turn_button_pressed():
-	pass # Replace with function body.
+	# check turn
+	#start_slice_turn()
+	slice_turned.emit(selected_axis, slice, turn_sign)
+
+func start_remote_slice_turn(axis: String, slice_index: int, direction: int):
+	incoming_slice_turn.emit(axis, slice_index, direction)
+	selected_axis = axis
+	slice = slice_index
+	turn_sign = direction
+	start_slice_turn()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	generate_cube(8)
+	turning = false
+	selected_axis = "x"
+	turn_sign = -1
+	slice = 0
 	
-	turning = true
-	turn_progress = 0.0
-	turning_direction = Vector3(0, 0, 1)
+	if Client.client_ref == null:
+		return
+	
+	Client.client_ref.slice_move.connect(start_remote_slice_turn)
+	slice_turned.connect(Client.client_ref.on_cube_slice_turned)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	if turning:
 		turn_slice(delta)
+
+
+func _on_check_box_toggled(toggled_on):
+	if toggled_on:
+		turn_sign = 1.0
+	else:
+		turn_sign = -1.0
