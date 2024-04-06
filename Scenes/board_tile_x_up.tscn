@@ -1,0 +1,35 @@
+[gd_scene load_steps=5 format=3 uid="uid://d1mid1hs2fhvy"]
+
+[ext_resource type="Script" path="res://Scripts/Board Tile.gd" id="1_jbtta"]
+[ext_resource type="Texture2D" uid="uid://bmwd0wwxgqft6" path="res://Textures/tile_filled.png" id="2_7yfqm"]
+[ext_resource type="Texture2D" uid="uid://c37p4fqv8cfx1" path="res://Textures/selected_frame.png" id="3_07cub"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_26age"]
+size = Vector3(1, 0.01, 1)
+
+[node name="Board Tile X Up" type="Area3D"]
+transform = Transform3D(-4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0, 1, 0.5, 0, 0)
+input_capture_on_drag = true
+script = ExtResource("1_jbtta")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.005, 0)
+shape = SubResource("BoxShape3D_26age")
+
+[node name="Tile Sprite" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.001, 0)
+modulate = Color(1, 1, 0, 1)
+pixel_size = 0.0039
+shaded = true
+texture = ExtResource("2_7yfqm")
+
+[node name="Selection Sprite" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.002, 0)
+visible = false
+modulate = Color(0, 0, 0, 1)
+pixel_size = 0.0039
+shaded = true
+texture = ExtResource("3_07cub")
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

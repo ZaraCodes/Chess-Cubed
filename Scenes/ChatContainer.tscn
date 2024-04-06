@@ -1,7 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://82y4p7f12rmt"]
+[gd_scene load_steps=2 format=3 uid="uid://82y4p7f12rmt"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Chat Container.gd" id="1_iuw8q"]
-[ext_resource type="PackedScene" uid="uid://cc680ta1uqi4p" path="res://Scenes/ChatMessage.tscn" id="2_fjyrd"]
 
 [node name="Chat Container" type="PanelContainer"]
 clip_contents = true
@@ -37,9 +36,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 alignment = 2
-
-[node name="Chat Message" parent="MarginContainer/VBoxContainer/ScrollContainer/Chat Messages" instance=ExtResource("2_fjyrd")]
-layout_mode = 2
 
 [node name="LineEdit" type="LineEdit" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2

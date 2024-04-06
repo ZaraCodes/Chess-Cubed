@@ -1,9 +1,36 @@
-[gd_scene load_steps=3 format=3 uid="uid://bpvtcqmgvee3y"]
+[gd_scene load_steps=8 format=3 uid="uid://bpvtcqmgvee3y"]
 
 [ext_resource type="PackedScene" uid="uid://82y4p7f12rmt" path="res://Scenes/ChatContainer.tscn" id="1_38qva"]
 [ext_resource type="PackedScene" uid="uid://dn2tctqx1pe8k" path="res://Scenes/EnterNameWindow.tscn" id="2_hqs6p"]
+[ext_resource type="Script" path="res://Scripts/Chess Cube.gd" id="3_mshm1"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_lju31"]
+sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
+sky_horizon_color = Color(0.692157, 0.727451, 0.77451, 1)
+ground_bottom_color = Color(0.384314, 0.454902, 0.54902, 1)
+ground_horizon_color = Color(0.692157, 0.727451, 0.77451, 1)
+
+[sub_resource type="Sky" id="Sky_do21j"]
+sky_material = SubResource("ProceduralSkyMaterial_lju31")
+
+[sub_resource type="Environment" id="Environment_ar6yw"]
+background_mode = 2
+sky = SubResource("Sky_do21j")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="Curve" id="Curve_t84j1"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
 
 [node name="GameScene" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_ar6yw")
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3
@@ -12,14 +39,52 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="Chat Container" parent="Control" instance=ExtResource("1_38qva")]
 visible = false
 layout_mode = 1
 
 [node name="Enter Name Window" parent="Control" instance=ExtResource("2_hqs6p")]
+visible = false
 layout_mode = 1
 offset_left = -265.5
 offset_top = -64.0
 offset_right = 265.5
 offset_bottom = 64.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control"]
+layout_mode = 0
+offset_right = 319.0
+offset_bottom = 40.0
+
+[node name="Button" type="Button" parent="Control/HBoxContainer"]
+layout_mode = 2
+text = "Turn!!"
+
+[node name="SpinBox" type="SpinBox" parent="Control/HBoxContainer"]
+layout_mode = 2
+max_value = 7.0
+
+[node name="OptionButton" type="OptionButton" parent="Control/HBoxContainer"]
+layout_mode = 2
+item_count = 3
+selected = 0
+popup/item_0/text = "X"
+popup/item_0/id = 0
+popup/item_1/text = "Y"
+popup/item_1/id = 1
+popup/item_2/text = "Z"
+popup/item_2/id = 2
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 10.6406, 12.1137, 10.6406)
+fov = 60.0
+
+[node name="Chess Cube" type="Node3D" parent="."]
+script = ExtResource("3_mshm1")
+curve = SubResource("Curve_t84j1")
+
+[node name="Rotator" type="Node3D" parent="Chess Cube"]
+
+[connection signal="pressed" from="Control/HBoxContainer/Button" to="Chess Cube" method="_on_turn_button_pressed"]
