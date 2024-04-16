@@ -7,15 +7,275 @@ signal start_server_command_received(port: int)
 @export var wss: WebSocketServer
 
 var port: int
-var players := { 197356: { "player_name": "Blara", "role": Enums.PlayerRole.SPECTATOR } }
+var players := {}
 
-var game_state := {}
+var cube_size: int
+var game_state := {
+	Enums.Face.XUP: {},
+	Enums.Face.XDOWN: {},
+	Enums.Face.YUP: {},
+	Enums.Face.YDOWN: {},
+	Enums.Face.ZUP: {},
+	Enums.Face.ZDOWN: {},
+}
+
+func generate_cube(size: int):
+	cube_size = size
+	for x in range(size):
+		for y in range(size):
+			for side in game_state.keys():
+				game_state[side]["%s_%s" % [x, y]] = ""
+	game_state[Enums.Face.YUP]["0_1"] = "B"
+	game_state[Enums.Face.YUP]["1_1"] = "B"
+	game_state[Enums.Face.YUP]["2_1"] = "B"
+	#game_state[Enums.Face.YUP]["3_1"] = "B"
+	#game_state[Enums.Face.YUP]["4_1"] = "B"
+	game_state[Enums.Face.YUP]["5_1"] = "B"
+	game_state[Enums.Face.YUP]["6_1"] = "B"
+	game_state[Enums.Face.YUP]["7_1"] = "B"
+
+func rotate_slice(axis: Enums.SliceAxis, slice_index: int, direction: int):
+	if axis == Enums.SliceAxis.X:
+		if direction > 0:
+			rotate_slice_x_positive(slice_index)
+		elif direction < 0:
+			rotate_slice_x_negative(slice_index)
+	elif axis == Enums.SliceAxis.Y:
+		if direction > 0:
+			rotate_slice_y_positive(slice_index)
+		elif direction < 0:
+			rotate_slice_y_negative(slice_index)
+	elif axis == Enums.SliceAxis.Z:
+		if direction > 0:
+			rotate_slice_z_positive(slice_index)
+		elif direction < 0:
+			rotate_slice_z_negative(slice_index)
+
+
+func rotate_face_left(face: Dictionary) -> Dictionary:
+	var new_face := {}
+	for row in range(cube_size):
+		for column in range(cube_size):
+			var new_key := "%s_%s" % [row, column]
+			var old_key := "%s_%s" % [column, cube_size - 1 - row]
+			new_face[new_key] = face[old_key]
+	return new_face
+
+
+func rotate_face_right(face: Dictionary) -> Dictionary:
+	var new_face := {}
+	for row in range(cube_size):
+		for column in range(cube_size):
+			var new_key := "%s_%s" % [row, column]
+			var old_key := "%s_%s" % [cube_size - 1 - column, row]
+			new_face[new_key] = face[old_key]
+	return new_face
+
+
+func rotate_slice_with_inversion(slice: int, old_face: Enums.Face, new_face: Enums.Face, new_state: Dictionary) -> Dictionary:
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [slice, row]
+		var new_key = "%s_%s" % [slice, cube_size - 1 - row]
+		new_state[new_face][new_key] = game_state[old_face][old_key]
+	return new_state
+
+
+func rotate_slice_without_inversion(slice: int, old_face: Enums.Face, new_face: Enums.Face, new_state: Dictionary) -> Dictionary:
+	for row in range(cube_size):
+		var key = "%s_%s" % [slice, row]
+		new_state[new_face][key] = game_state[old_face][key]
+	return new_state
+
+
+func rotate_slice_x_positive(slice: int):
+	# yup becomes zup
+	var new_state := game_state.duplicate(true)
+	
+	# zdown -> yup no inversion
+	new_state = rotate_slice_without_inversion(slice, Enums.Face.ZDOWN, Enums.Face.YUP, new_state)
+	# yup -> zup inversion
+	new_state = rotate_slice_with_inversion(slice, Enums.Face.YUP, Enums.Face.ZUP, new_state)
+	# zup -> ydown no inversion
+	new_state = rotate_slice_without_inversion(slice, Enums.Face.ZUP, Enums.Face.YDOWN, new_state)
+	# ydown -> zdown inversion
+	new_state = rotate_slice_with_inversion(slice, Enums.Face.YDOWN, Enums.Face.ZDOWN, new_state)
+	
+	if slice == 0:
+		new_state[Enums.Face.XDOWN] = rotate_face_left(game_state[Enums.Face.XDOWN])
+	elif slice == cube_size - 1:
+		new_state[Enums.Face.XUP] = rotate_face_left(game_state[Enums.Face.XUP])
+	
+	game_state = new_state
+
+
+func rotate_slice_x_negative(slice: int):
+	# yup becomes zdown
+	var new_state := game_state.duplicate(true)
+	
+	# yup -> zdown
+	new_state = rotate_slice_without_inversion(slice, Enums.Face.YUP, Enums.Face.ZDOWN, new_state)
+	# zdown -> ydown
+	new_state = rotate_slice_with_inversion(slice, Enums.Face.ZDOWN, Enums.Face.YDOWN, new_state)
+	# ydown -> zup
+	new_state = rotate_slice_without_inversion(slice, Enums.Face.YDOWN, Enums.Face.ZUP, new_state)
+	# zup -> yup
+	new_state = rotate_slice_with_inversion(slice, Enums.Face.ZUP, Enums.Face.YUP, new_state)
+	
+	if slice == 0:
+		new_state[Enums.Face.XDOWN] = rotate_face_right(game_state[Enums.Face.XDOWN])
+	elif slice == cube_size - 1:
+		new_state[Enums.Face.XUP] = rotate_face_right(game_state[Enums.Face.XUP])
+	
+	game_state = new_state
+
+
+func rotate_slice_y_positive(slice: int):
+	# xup becomes zdown
+	var new_state := game_state.duplicate(true)
+	
+	# xup -> zdown
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [slice, row]
+		var new_key = "%s_%s" % [row, slice]
+		new_state[Enums.Face.ZDOWN][new_key] = game_state[Enums.Face.XUP][old_key]
+	
+	# zdown -> xdown
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [row, slice]
+		var new_key = "%s_%s" % [slice, cube_size - 1 - row]
+		new_state[Enums.Face.XDOWN][new_key] = game_state[Enums.Face.ZDOWN][old_key]
+	
+	# xdown -> zup
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [slice, row]
+		var new_key = "%s_%s" % [row, slice]
+		new_state[Enums.Face.ZUP][new_key] = game_state[Enums.Face.XDOWN][old_key]
+
+	# zup -> xup
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [row, slice]
+		var new_key = "%s_%s" % [slice, cube_size - 1 - row]
+		new_state[Enums.Face.XUP][new_key] = game_state[Enums.Face.ZUP][old_key]
+	
+	if slice == 0:
+		new_state[Enums.Face.YDOWN] = rotate_face_right(game_state[Enums.Face.YDOWN])
+	elif slice == cube_size - 1:
+		new_state[Enums.Face.YUP] = rotate_face_right(game_state[Enums.Face.YUP])
+	
+	game_state = new_state
+
+
+func rotate_slice_y_negative(slice: int):
+	# xup becomes zup
+	var new_state := game_state.duplicate(true)
+	
+	# xup -> zup
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [slice, row]
+		var new_key = "%s_%s" % [cube_size - 1 - row, slice]
+		new_state[Enums.Face.ZUP][new_key] = game_state[Enums.Face.XUP][old_key]
+
+	# zup -> xdown
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [row, slice]
+		var new_key = "%s_%s" % [slice, row]
+		new_state[Enums.Face.XDOWN][new_key] = game_state[Enums.Face.ZUP][old_key]
+	
+	# xdown -> zdown
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [slice, cube_size - 1 - row]
+		var new_key = "%s_%s" % [row, slice]
+		new_state[Enums.Face.ZDOWN][new_key] = game_state[Enums.Face.XDOWN][old_key]
+	
+	# zdown -> xup
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [row, slice]
+		var new_key = "%s_%s" % [slice, row]
+		new_state[Enums.Face.XUP][new_key] = game_state[Enums.Face.ZDOWN][old_key]
+	
+	if slice == 0:
+		new_state[Enums.Face.YDOWN] = rotate_face_left(game_state[Enums.Face.YDOWN])
+	elif slice == cube_size - 1:
+		new_state[Enums.Face.YUP] = rotate_face_left(game_state[Enums.Face.YUP])
+	
+	game_state = new_state
+
+
+func rotate_slice_z_positive(slice: int):
+	# yup becomes xdown
+	var new_state := game_state.duplicate(true)
+	
+	# yup -> xdown
+	for row in range(cube_size):
+		var key = "%s_%s" % [row, slice]
+		new_state[Enums.Face.XDOWN][key] = game_state[Enums.Face.YUP][key]
+	
+	# xdown -> ydown
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [row, slice]
+		var new_key = "%s_%s" % [cube_size - 1 - row, slice]
+		new_state[Enums.Face.YDOWN][new_key] = game_state[Enums.Face.XDOWN][old_key]
+	
+	# ydown -> xup
+	for row in range(cube_size):
+		var key = "%s_%s" % [row, slice]
+		new_state[Enums.Face.XUP][key] = game_state[Enums.Face.YDOWN][key]
+	
+	# xup -> yup
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [row, slice]
+		var new_key = "%s_%s" % [cube_size - 1 - row, slice]
+		new_state[Enums.Face.YUP][new_key] = game_state[Enums.Face.XUP][old_key]
+	
+	if slice == 0:
+		new_state[Enums.Face.ZDOWN] = rotate_face_left(game_state[Enums.Face.ZDOWN])
+	elif slice == cube_size - 1:
+		new_state[Enums.Face.ZUP] = rotate_face_left(game_state[Enums.Face.ZUP])
+	
+	game_state = new_state
+
+
+func rotate_slice_z_negative(slice: int):
+	# yup becomes xup
+	var new_state := game_state.duplicate(true)
+	
+	# yup -> xup
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [row, slice]
+		var new_key = "%s_%s" % [cube_size - 1 - row, slice]
+		new_state[Enums.Face.XUP][new_key] = game_state[Enums.Face.YUP][old_key]
+	
+	# xup -> ydown
+	for row in range(cube_size):
+		var key = "%s_%s" % [row, slice]
+		new_state[Enums.Face.YDOWN][key] = game_state[Enums.Face.XUP][key]
+	
+	# ydown -> xdown
+	for row in range(cube_size):
+		var old_key = "%s_%s" % [row, slice]
+		var new_key = "%s_%s" % [cube_size - 1 - row, slice]
+		new_state[Enums.Face.XDOWN][new_key] = game_state[Enums.Face.YDOWN][old_key]
+	
+	# xdown -> yup
+	for row in range(cube_size):
+		var key = "%s_%s" % [row, slice]
+		new_state[Enums.Face.YUP][key] = game_state[Enums.Face.XDOWN][key]
+	
+	if slice == 0:
+		new_state[Enums.Face.ZDOWN] = rotate_face_right(game_state[Enums.Face.ZDOWN])
+	elif slice == cube_size - 1:
+		new_state[Enums.Face.ZUP] = rotate_face_right(game_state[Enums.Face.ZUP])
+	
+	game_state = new_state
+
 
 func start_server():
 	if port > 0:
+		generate_cube(8) # replace this later with game settings
 		start_server_command_received.emit(port)
 	else:
 		print("Server didn't start: Invalid port")
+
 
 # reacting to server signals
 func _on_message_received(peer_id: int, message: Variant):
@@ -33,6 +293,7 @@ func _on_message_received(peer_id: int, message: Variant):
 		elif message["type"] == Enums.MessageType.MOVE:
 			handle_move_message(peer_id, message)
 
+
 func handle_player_exists(peer_id: int, message: Variant):
 	if not message.has("player_name") or does_player_exist(message["player_name"]):
 		var response := { "type": Enums.MessageType.PLAYER_EXISTS, "value": true }
@@ -40,6 +301,7 @@ func handle_player_exists(peer_id: int, message: Variant):
 	else:
 		var response := { "type": Enums.MessageType.PLAYER_EXISTS, "value": false }
 		wss.send_to_peer(peer_id, response)
+
 
 func handle_player_count_check(peer_id: int, message: Variant):
 	var response := {}
@@ -52,6 +314,7 @@ func handle_player_count_check(peer_id: int, message: Variant):
 	else:
 		response = { "type": Enums.MessageType.PLAYER_COUNT_CHECK, "result": Enums.PlayerCountResult.MISSING_ROLE }
 	wss.send_to_peer(peer_id, response)
+
 
 func handle_add_player(peer_id: int, message: Variant):
 	var response := {}
@@ -68,6 +331,7 @@ func handle_add_player(peer_id: int, message: Variant):
 		response = { "type": Enums.MessageType.ADD_PLAYER, "result": Enums.AddPlayerResult.SUCCESS, "player_name": message["player_name"] }
 	wss.send_to_peer(peer_id, response)
 
+
 func handle_incoming_chat_message(peer_id: int, message: Variant):
 	var response := {}
 	if not message.has("text"):
@@ -80,6 +344,7 @@ func handle_incoming_chat_message(peer_id: int, message: Variant):
 		response = { "type": Enums.MessageType.CHAT_MESSAGE, "message": { "player_name": players[peer_id]["player_name"], "text": message["text"] } }
 		send_to_players(response)
 
+
 func handle_move_message(peer_id: int, message: Variant):
 	if not message.has("move_type") and not message.has("move_data"):
 		print_rich("[b][color=red]Move type or move data missing")
@@ -90,12 +355,14 @@ func handle_move_message(peer_id: int, message: Variant):
 			print_rich("[b][color=red]axis or slice_index or direction missing")
 			return
 		
-		print("AM I HERE??")
 		# add check if player has slice moves available
+		
+		var old_state = game_state.duplicate(true)
+		rotate_slice(message["move_data"]["axis"], message["move_data"]["slice_index"], message["move_data"]["direction"])
 		var new_game_state := {
 			"type": Enums.MessageType.GAME_STATE,
-			"old_state": "todo",
-			"new_state": "todo",
+			"old_state": old_state,
+			"new_state": game_state,
 			"move_type": Enums.MoveType.SLICE,
 			"move_data": {
 				"slice_index": message["move_data"]["slice_index"],
@@ -107,13 +374,16 @@ func handle_move_message(peer_id: int, message: Variant):
 	else:
 		print("MVOE TYPE?????? WHY ARE YOU NOT SLICE??????????")
 
+
 func _on_client_connected(peer_id: int):
 	print("Client %s connected" % peer_id)
 	var response := { "type": Enums.MessageType.WELCOME, "peer_id": peer_id }
 	wss.send_to_peer(peer_id, response)
 
+
 func _on_client_disconnected(peer_id: int):
 	print("Client %s disconnected" % peer_id)
+
 
 func _on_server_listening(listening: Error):
 	if listening == Error.OK:
@@ -121,8 +391,10 @@ func _on_server_listening(listening: Error):
 	else:
 		print("Server did not start listening.")
 
+
 func _on_panel_container_port_changed(new_port: int):
 	port = new_port
+
 
 func does_player_exist(player: String) -> bool:
 	for key in players.keys():
@@ -130,16 +402,20 @@ func does_player_exist(player: String) -> bool:
 			return true
 	return false
 
+
 func add_player(player: String, peer_id: int, role: Enums.PlayerRole):
 	if not does_player_exist(player):
 		players[peer_id] = { "player_name": player, "role": role }
 		send_join_message(peer_id)
 
+
 func get_player_count() -> int:
 	return count_player_type(Enums.PlayerRole.PLAYER)
 
+
 func get_spectator_count() -> int:
 	return count_player_type(Enums.PlayerRole.SPECTATOR)
+
 
 func count_player_type(player_type: Enums.PlayerRole) -> int:
 	var counter := 0
@@ -148,9 +424,11 @@ func count_player_type(player_type: Enums.PlayerRole) -> int:
 			counter += 1
 	return counter
 
+
 func send_to_players(message: Dictionary):
 	for key in players.keys():
 		wss.send_to_peer(key, message)
+
 
 func send_join_message(peer_id: int):
 	var message := { "type": Enums.MessageType.JOIN_MESSAGE, "player": players[peer_id], "peer_id": peer_id }

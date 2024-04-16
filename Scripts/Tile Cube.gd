@@ -9,30 +9,29 @@ var tile_z_down = preload("res://Scenes/board_tile_z_down.tscn")
 
 
 
-func add_tile(direction: Vector3i, board_position: Vector2i):
-	var hmm = [direction.x, direction.y, direction.z]
+func add_tile(direction: Enums.Face, board_position: Vector2i):
 	var offset := 0
 	var tile
-	match hmm:
-		[1, 0, 0]:
+	match direction:
+		Enums.Face.XUP:
 			tile = tile_x_up.instantiate()
 			offset = 1
-		[-1, 0, 0]:
+		Enums.Face.XDOWN:
 			tile = tile_x_down.instantiate()
-		[0, 1, 0]:
+		Enums.Face.YUP:
 			tile = tile_y_up.instantiate()
-		[0, -1, 0]:
+		Enums.Face.YDOWN:
 			tile = tile_y_down.instantiate()
 			offset = 1
-		[0, 0, 1]:
+		Enums.Face.ZUP:
 			tile = tile_z_up.instantiate()
-		[0, 0, -1]:
+		Enums.Face.ZDOWN:
 			tile = tile_z_down.instantiate()
 			offset = 1
 		_:
 			printerr("No direction matched")
 	if tile != null:
-		add_child(tile)
+		$Tiles.add_child(tile)
 		tile.board_position = board_position
 		tile.set_texture(offset)
 	return tile

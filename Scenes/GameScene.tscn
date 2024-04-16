@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://bpvtcqmgvee3y"]
+[gd_scene load_steps=10 format=3 uid="uid://bpvtcqmgvee3y"]
 
 [ext_resource type="PackedScene" uid="uid://82y4p7f12rmt" path="res://Scenes/ChatContainer.tscn" id="1_38qva"]
 [ext_resource type="PackedScene" uid="uid://dn2tctqx1pe8k" path="res://Scenes/EnterNameWindow.tscn" id="2_hqs6p"]
 [ext_resource type="Script" path="res://Scripts/Chess Cube.gd" id="3_mshm1"]
 [ext_resource type="Script" path="res://Scripts/Slice Turn UI Box.gd" id="3_p7b46"]
+[ext_resource type="Script" path="res://Scripts/Free Cam.gd" id="4_pwrp4"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_lju31"]
 sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
@@ -81,20 +82,65 @@ popup/item_2/id = 2
 [node name="CheckBox" type="CheckBox" parent="Control/Slice Turn UI Box"]
 layout_mode = 2
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 10.6406, 12.1137, 10.6406)
-fov = 60.0
+[node name="HBoxContainer" type="HBoxContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_bottom = 40.0
+grow_horizontal = 0
 
-[node name="Chess Cube" type="Node3D" parent="."]
+[node name="Face Selector" type="OptionButton" parent="Control/HBoxContainer"]
+layout_mode = 2
+item_count = 7
+selected = 6
+popup/item_0/text = "X Up"
+popup/item_0/id = 0
+popup/item_1/text = "X Down"
+popup/item_1/id = 1
+popup/item_2/text = "Y Up"
+popup/item_2/id = 2
+popup/item_3/text = "Y Down"
+popup/item_3/id = 3
+popup/item_4/text = "Z Up"
+popup/item_4/id = 4
+popup/item_5/text = "Z Down"
+popup/item_5/id = 5
+popup/item_6/text = "None"
+popup/item_6/id = 6
+
+[node name="Label" type="Label" parent="Control"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 23.0
+grow_horizontal = 2
+
+[node name="Chess Cube" type="Node3D" parent="." node_paths=PackedStringArray("tile_coord_label")]
 script = ExtResource("3_mshm1")
 curve = SubResource("Curve_t84j1")
+tile_coord_label = NodePath("../Control/Label")
 
 [node name="Rotator" type="Node3D" parent="Chess Cube"]
 
 [node name="Small Cubes" type="Node3D" parent="Chess Cube"]
 
+[node name="Camera Rotation Node" type="Node3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="Camera Rotation Node"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+fov = 60.0
+script = ExtResource("4_pwrp4")
+movement_speed = 2.0
+
 [connection signal="pressed" from="Control/Slice Turn UI Box/Button" to="Chess Cube" method="_on_turn_button_pressed"]
 [connection signal="value_changed" from="Control/Slice Turn UI Box/SpinBox" to="Chess Cube" method="_on_slice_updated"]
 [connection signal="item_selected" from="Control/Slice Turn UI Box/OptionButton" to="Chess Cube" method="_on_axis_selected"]
 [connection signal="toggled" from="Control/Slice Turn UI Box/CheckBox" to="Chess Cube" method="_on_check_box_toggled"]
+[connection signal="item_selected" from="Control/HBoxContainer/Face Selector" to="Chess Cube" method="_on_face_selector_item_selected"]
+[connection signal="cube_generated" from="Chess Cube" to="Camera Rotation Node/Camera3D" method="_on_chess_cube_cube_generated"]
 [connection signal="incoming_slice_turn" from="Chess Cube" to="Control/Slice Turn UI Box" method="update_ui_elements"]

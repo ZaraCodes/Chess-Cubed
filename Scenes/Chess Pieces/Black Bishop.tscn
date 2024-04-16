@@ -1,4 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://xmiau05akbpd"]
+[gd_scene load_steps=7 format=3 uid="uid://xmiau05akbpd"]
+
+[ext_resource type="Script" path="res://Scripts/Chess Piece.gd" id="1_aetu3"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bu7bj"]
 resource_name = "Medium Wood"
@@ -100,6 +102,9 @@ shadow_mesh = SubResource("ArrayMesh_i6ssu")
 
 [node name="Black Bishop" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+script = ExtResource("1_aetu3")
+moves = [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
+symbol = "B"
 
 [node name="Black Bishop K" type="MeshInstance3D" parent="."]
 mesh = SubResource("ArrayMesh_i1m4s")

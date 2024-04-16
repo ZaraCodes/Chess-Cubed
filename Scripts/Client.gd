@@ -11,6 +11,7 @@ signal player_count_is_valid(value: bool)
 signal send_join_message(data: Dictionary)
 signal send_chat_message(data: Dictionary)
 signal slice_move(axis: String, slice_index: int)
+signal new_game_state(game_state: Dictionary)
 
 static var client_ref: Client
 var peer_id: int
@@ -124,6 +125,7 @@ func handle_incoming_game_state_message(message: Dictionary):
 				axis = "z"
 		var direction = message["move_data"]["direction"]
 		slice_move.emit(axis, slice_index, direction)
+	new_game_state.emit(message["new_state"])
 
 func on_player_submitted_button_pressed(player_name: String, role: Enums.PlayerRole):
 	var request = { "type": Enums.MessageType.ADD_PLAYER, "player_name": player_name, "role": role }

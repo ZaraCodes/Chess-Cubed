@@ -40,3 +40,5 @@ script = ExtResource("1_pkyqg")
 [node name="Cube" type="MeshInstance3D" parent="."]
 mesh = SubResource("ArrayMesh_vk1gn")
 skeleton = NodePath("")
+
+[node name="Tiles" type="Node3D" parent="."]

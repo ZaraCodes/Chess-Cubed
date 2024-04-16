@@ -48,6 +48,15 @@ enum SliceAxis {
 	Z
 }
 
+enum Face {
+	XUP,
+	XDOWN,
+	YUP,
+	YDOWN,
+	ZUP,
+	ZDOWN
+}
+
 var bla = {
 	"old_state": {
 		# array for each cube side
