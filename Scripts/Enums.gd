@@ -8,7 +8,8 @@ enum MessageType {
 	JOIN_MESSAGE,
 	CHAT_MESSAGE,
 	GAME_STATE,
-	MOVE
+	MOVE,
+	POSSIBLE_MOVES_REQUEST
 }
 
 enum AddPlayerResult {
@@ -55,18 +56,4 @@ enum Face {
 	YDOWN,
 	ZUP,
 	ZDOWN
-}
-
-var bla = {
-	"old_state": {
-		# array for each cube side
-	},
-	"move_type": MoveType.SLICE,
-	"move_data_slice": {
-		"axis": SliceAxis.Y,
-		"slice_index": 0
-	},
-	"move_data_normal": {
-		
-	}
 }

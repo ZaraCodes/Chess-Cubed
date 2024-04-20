@@ -19,6 +19,8 @@ var game_state := {
 	Enums.Face.ZDOWN: {},
 }
 
+var pieces := {}
+
 func generate_cube(size: int):
 	cube_size = size
 	for x in range(size):
@@ -26,13 +28,29 @@ func generate_cube(size: int):
 			for side in game_state.keys():
 				game_state[side]["%s_%s" % [x, y]] = ""
 	game_state[Enums.Face.YUP]["0_1"] = "B"
-	game_state[Enums.Face.YUP]["1_1"] = "B"
+	game_state[Enums.Face.YUP]["1_1"] = "k"
 	game_state[Enums.Face.YUP]["2_1"] = "B"
 	#game_state[Enums.Face.YUP]["3_1"] = "B"
 	#game_state[Enums.Face.YUP]["4_1"] = "B"
 	game_state[Enums.Face.YUP]["5_1"] = "B"
-	game_state[Enums.Face.YUP]["6_1"] = "B"
+	game_state[Enums.Face.YUP]["6_1"] = "K"
+	game_state[Enums.Face.YUP]["6_6"] = "b"
 	game_state[Enums.Face.YUP]["7_1"] = "B"
+
+
+func load_piece_data(symbol: String):
+	symbol = symbol.to_lower()
+	if FileAccess.file_exists("res://Scripts/Moves/%s.json" % symbol):
+		var file := FileAccess.open("res://Scripts/Moves/%s.json" % symbol, FileAccess.READ)
+		var data = JSON.parse_string(file.get_as_text())
+		file.close()
+		pieces[symbol] = data
+
+
+func load_default_pieces():
+	load_piece_data("b")
+	load_piece_data("k")
+
 
 func rotate_slice(axis: Enums.SliceAxis, slice_index: int, direction: int):
 	if axis == Enums.SliceAxis.X:
@@ -272,6 +290,7 @@ func rotate_slice_z_negative(slice: int):
 func start_server():
 	if port > 0:
 		generate_cube(8) # replace this later with game settings
+		load_default_pieces()
 		start_server_command_received.emit(port)
 	else:
 		print("Server didn't start: Invalid port")
@@ -292,6 +311,8 @@ func _on_message_received(peer_id: int, message: Variant):
 			handle_incoming_chat_message(peer_id, message)
 		elif message["type"] == Enums.MessageType.MOVE:
 			handle_move_message(peer_id, message)
+		elif message["type"] == Enums.MessageType.POSSIBLE_MOVES_REQUEST:
+			handle_possible_moves_request(message)
 
 
 func handle_player_exists(peer_id: int, message: Variant):
@@ -373,6 +394,69 @@ func handle_move_message(peer_id: int, message: Variant):
 		send_to_players(new_game_state)
 	else:
 		print("MVOE TYPE?????? WHY ARE YOU NOT SLICE??????????")
+
+
+func handle_possible_moves_request(message: Dictionary):
+	if not message.has("data"):
+		print_rich("[color=red]Data missing from possible moves request")
+		return
+	if not message["data"].has("face"):
+		print_rich("[color=red]Face missing from data")
+		return
+	if not message["data"].has("board_position"):
+		print_rich("[color=red]Board position missing from data")
+		return
+	
+	var board_position = message["data"]["board_position"]
+	var face = message["data"]["face"]
+	var piece = game_state[face][board_position]
+	if piece == "":
+		print_rich("[color=blue]Tile is empty")
+		return
+	
+	var lowercase: bool = piece == piece.to_lower()
+	piece = piece.to_lower()
+	if piece not in pieces.keys():
+		print_rich("[color=red] '%s' Unknown piece" % piece)
+		return
+	
+	var piece_data = pieces[piece]
+	var board_x := int(board_position.split("_")[0])
+	var board_y := int(board_position.split("_")[1])
+
+	var possible_moves := []
+	for possible_move in piece_data["moves"]:
+		# print_rich("[color=yellow][SERVER]: [color=white]" + str(possible_move))
+		var x = board_x + possible_move[0]
+		var y = board_y + possible_move[1]
+		
+		while x < cube_size and x >= 0 and y < cube_size and y >= 0:
+			var new_tile = "%s_%s" % [x, y]
+			if game_state[face][new_tile] != "":
+				var new_piece = game_state[face][new_tile]
+				var new_piece_lowercase: bool = new_piece == new_piece.to_lower()
+				
+				if new_piece_lowercase == lowercase:
+					break
+				if new_tile not in possible_moves:
+					possible_moves.append(new_tile)
+				break
+			
+			if new_tile not in possible_moves:
+				possible_moves.append(new_tile)
+			if not piece_data["infinite_distance"]:
+				break
+			x += possible_move[0]
+			y += possible_move[1]
+	
+	var response := {
+		"type": Enums.MessageType.POSSIBLE_MOVES_REQUEST,
+		"data": [{
+			"possible_moves": possible_moves,
+			"face": face
+		}]
+	}
+	send_to_players(response)
 
 
 func _on_client_connected(peer_id: int):

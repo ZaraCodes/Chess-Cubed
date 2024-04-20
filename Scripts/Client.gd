@@ -12,9 +12,12 @@ signal send_join_message(data: Dictionary)
 signal send_chat_message(data: Dictionary)
 signal slice_move(axis: String, slice_index: int)
 signal new_game_state(game_state: Dictionary)
+signal possible_moves_received(data: Array)
 
 static var client_ref: Client
 var peer_id: int
+
+var awaiting_possible_moves: bool = false
 
 ## Websocket Client
 @export var wsc: WebSocketClient
@@ -48,18 +51,20 @@ func _on_message_received(message: Variant):
 	if message.has("type"):
 		if message["type"] == Enums.MessageType.PLAYER_EXISTS:
 			handle_player_exists(message)
-		if message["type"] == Enums.MessageType.ADD_PLAYER:
+		elif message["type"] == Enums.MessageType.ADD_PLAYER:
 			handle_add_player(message)
-		if message["type"] == Enums.MessageType.PLAYER_COUNT_CHECK:
+		elif message["type"] == Enums.MessageType.PLAYER_COUNT_CHECK:
 			handle_player_count_check(message)
-		if message["type"] == Enums.MessageType.WELCOME:
+		elif message["type"] == Enums.MessageType.WELCOME:
 			handle_welcome(message)
-		if message["type"] == Enums.MessageType.JOIN_MESSAGE:
+		elif message["type"] == Enums.MessageType.JOIN_MESSAGE:
 			handle_join_message(message)
-		if message["type"] == Enums.MessageType.CHAT_MESSAGE:
+		elif message["type"] == Enums.MessageType.CHAT_MESSAGE:
 			handle_incoming_chat_message(message)
-		if message["type"] == Enums.MessageType.GAME_STATE:
+		elif message["type"] == Enums.MessageType.GAME_STATE:
 			handle_incoming_game_state_message(message)
+		elif message["type"] == Enums.MessageType.POSSIBLE_MOVES_REQUEST:
+			handle_possible_moves(message)
 
 func handle_player_exists(message: Dictionary):
 	if message.has("value"):
@@ -127,6 +132,15 @@ func handle_incoming_game_state_message(message: Dictionary):
 		slice_move.emit(axis, slice_index, direction)
 	new_game_state.emit(message["new_state"])
 
+
+func handle_possible_moves(message: Dictionary):
+	if not message.has("data"):
+		return
+	# check for valid data
+	possible_moves_received.emit(message["data"])
+	awaiting_possible_moves = false
+
+
 func on_player_submitted_button_pressed(player_name: String, role: Enums.PlayerRole):
 	var request = { "type": Enums.MessageType.ADD_PLAYER, "player_name": player_name, "role": role }
 	wsc.send(request)
@@ -174,6 +188,19 @@ func on_cube_slice_turned(axis: String, slice_index: int, direction: int):
 			"axis": axis_as_enum,
 			"slice_index": slice_index,
 			"direction": direction
+		}
+	}
+	wsc.send(data)
+
+func request_possible_moves(tile):
+	if awaiting_possible_moves:
+		return
+	awaiting_possible_moves = true
+	var data := {
+		"type": Enums.MessageType.POSSIBLE_MOVES_REQUEST,
+		"data": {
+			"face": tile.face,
+			"board_position": "%s_%s" % [tile.board_position.x, tile.board_position.y]
 		}
 	}
 	wsc.send(data)

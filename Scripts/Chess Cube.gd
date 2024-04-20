@@ -16,6 +16,7 @@ var game_state_cache := {}
 var selected_axis: String
 var slice: int
 var turn_sign: float
+var highlighted_tiles := []
 
 signal slice_turned(axis: String, slice_index: int, direction: int)
 signal incoming_slice_turn(axis: String, slice_index: int, direction: int)
@@ -89,7 +90,16 @@ func add_tile_to_boards(tile: Node3D, direction: Enums.Face):
 		boards[direction] = {}
 	
 	boards[direction]["%s_%s" % [tile.board_position.x, tile.board_position.y]] = tile
-	tile.tile_selected.connect(on_tile_hovered)
+	tile.tile_hovered.connect(on_tile_hovered)
+	if Client.client_ref != null:
+		tile.tile_selected.connect(Client.client_ref.request_possible_moves)
+		tile.tile_selected.connect(add_to_highlighted_tiles)
+
+
+func add_to_highlighted_tiles(tile: Node3D):
+	unhighlight_tiles()
+	highlighted_tiles.append(tile)
+
 
 func recalculate_slices_of_cubes():
 	cube_slices.clear()
@@ -131,23 +141,29 @@ func recalculate_boards():
 			
 			if tile.global_basis.y.x > .5:
 				new_boards[Enums.Face.XUP]["%s_%s" % [rounded_y, rounded_z]] = tile
-				tile.board_position = Vector2i(rounded_y, rounded_z)
+				set_tile_data(tile, Vector2i(rounded_y, rounded_z), Enums.Face.XUP)
 			elif tile.global_basis.y.x < -.5:
 				new_boards[Enums.Face.XDOWN]["%s_%s" % [rounded_y, rounded_z]] = tile
-				tile.board_position = Vector2i(rounded_y, rounded_z)
+				set_tile_data(tile, Vector2i(rounded_y, rounded_z), Enums.Face.XDOWN)
 			elif tile.global_basis.y.y > .5:
 				new_boards[Enums.Face.YUP]["%s_%s" % [rounded_x, rounded_z]] = tile
-				tile.board_position = Vector2i(rounded_x, rounded_z)
+				set_tile_data(tile, Vector2i(rounded_x, rounded_z), Enums.Face.YUP)
 			elif tile.global_basis.y.y < -.5:
 				new_boards[Enums.Face.YDOWN]["%s_%s" % [rounded_x, rounded_z]] = tile
-				tile.board_position = Vector2i(rounded_x, rounded_z)
+				set_tile_data(tile, Vector2i(rounded_x, rounded_z), Enums.Face.YDOWN)
 			elif tile.global_basis.y.z > .5:
 				new_boards[Enums.Face.ZUP]["%s_%s" % [rounded_x, rounded_y]] = tile
-				tile.board_position = Vector2i(rounded_x, rounded_y)
+				set_tile_data(tile, Vector2i(rounded_x, rounded_y), Enums.Face.ZUP)
 			elif tile.global_basis.y.z < -.5:
 				new_boards[Enums.Face.ZDOWN]["%s_%s" % [rounded_x, rounded_y]] = tile
-				tile.board_position = Vector2i(rounded_x, rounded_y)
+				set_tile_data(tile, Vector2i(rounded_x, rounded_y), Enums.Face.ZDOWN)
 	boards = new_boards
+
+
+func set_tile_data(tile, board_position: Vector2i, face: int):
+	tile.board_position = board_position
+	tile.face = face
+
 
 func add_slice_to_rotator(axis: String, layer: int):
 	for node in cube_slices[axis][layer]:
@@ -162,6 +178,7 @@ func is_on_edge(size: int, value: int):
 	return value == 0 or value == size - 1
 
 func start_slice_turn():
+	unhighlight_tiles()
 	turning = true
 	add_slice_to_rotator(selected_axis, slice)
 	turn_progress = 0.0
@@ -211,15 +228,15 @@ func check_game_state():
 			if tile.piece != null:
 				if tile.piece.symbol != game_state_cache[face][tile_key]:
 					if game_state_cache[face][tile_key] == "":
-						print("!! FACE %s WE HAVE TO DELETE THE '%s' ON %s TO SYNC !!" % [face, tile.piece.symbol, tile_key])
+						print_rich("[color=cyan][b]!! FACE %s WE HAVE TO DELETE THE '%s' ON %s TO SYNC !!" % [face, tile.piece.symbol, tile_key])
 						tile.piece.free()
 					else:
-						print("!! FACE %s WE HAVE TO REPLACE THE '%s' ON %s TO WITH %s!!" % [face, tile.piece.symbol, tile_key, game_state_cache[face][tile_key]])
+						print_rich("[color=cyan][b]!! FACE %s WE HAVE TO REPLACE THE '%s' ON %s TO WITH %s!!" % [face, tile.piece.symbol, tile_key, game_state_cache[face][tile_key]])
 				else:
 					pass
 			else:
 				if game_state_cache[face][tile_key] != "":
-					print("!! FACE %s WE HAVE TO SPAWN A '%s' ON %s" % [face, game_state_cache[face][tile_key], tile_key])
+					print_rich("[color=cyan][b]!! FACE %s WE HAVE TO SPAWN A '%s' ON %s" % [face, game_state_cache[face][tile_key], tile_key])
 					spawn_piece(face, tile_key, game_state_cache[face][tile_key])
 
 
@@ -232,31 +249,39 @@ func spawn_piece(face: Enums.Face, key: String, piece: String):
 		"B": # black bishop
 			new_piece = load("res://Scenes/Chess Pieces/Black Bishop.tscn").instantiate()
 		"b": # white bishop
-			pass
+			new_piece = load("res://Scenes/Chess Pieces/White Bishop.tscn").instantiate()
 		"K": # black king
-			pass
+			new_piece = load("res://Scenes/Chess Pieces/Black King.tscn").instantiate()
 		"k": # white king
-			pass
+			new_piece = load("res://Scenes/Chess Pieces/White King.tscn").instantiate()
 		"N": # black knight
+			# new_piece = load().instantiate()
 			pass
 		"n": # white knight
+			# new_piece = load().instantiate()
 			pass
 		"P": # black pawn
+			# new_piece = load().instantiate()
 			pass
 		"p": # white pawn
+			# new_piece = load().instantiate()
 			pass
 		"Q": # black queen
-			pass
+			new_piece = load("res://Scenes/Chess Pieces/Black Queen.tscn").instantiate()
 		"q": # white queen
+			new_piece = load("res://Scenes/Chess Pieces/White Queen.tscn").instantiate()
 			pass
 		"R": # black rook
+			# new_piece = load().instantiate()
 			pass
 		"r": # white rook
+			# new_piece = load().instantiate()
 			pass
 	
 	if new_piece != null:
 		boards[face][key].add_child(new_piece)
 		boards[face][key].piece = new_piece
+		boards[face][key].face = face
 
 func _on_turn_button_pressed():
 	# check turn
@@ -281,10 +306,10 @@ func _on_check_box_toggled(toggled_on):
 func _on_face_selector_item_selected(index):
 	for face in range(6):
 		for tile_pos in boards[face].keys():
-			boards[face][tile_pos].mark_as_deselected()
+			boards[face][tile_pos].selected = false
 	if index < 6:
 		for tile_pos in boards[index].keys():
-			boards[index][tile_pos].mark_as_selected()
+			boards[index][tile_pos].selected = true
 
 
 func cache_new_game_state(new_state: Dictionary):
@@ -293,6 +318,20 @@ func cache_new_game_state(new_state: Dictionary):
 
 func on_tile_hovered(coords: Vector2i):
 	tile_coord_label.text = "%s %s" % [coords.x, coords.y]
+
+
+func on_possible_moves_received(data: Array):
+	for face_data in data:
+		for tile in face_data["possible_moves"]:
+			boards[face_data["face"]][tile].selected = true
+			highlighted_tiles.append(boards[face_data["face"]][tile])
+
+
+func unhighlight_tiles():
+	for tile in highlighted_tiles:
+		tile.selected = false
+	highlighted_tiles.clear()
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -308,6 +347,8 @@ func _ready():
 	Client.client_ref.slice_move.connect(start_remote_slice_turn)
 	slice_turned.connect(Client.client_ref.on_cube_slice_turned)
 	Client.client_ref.new_game_state.connect(cache_new_game_state)
+	Client.client_ref.possible_moves_received.connect(on_possible_moves_received)
+
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):

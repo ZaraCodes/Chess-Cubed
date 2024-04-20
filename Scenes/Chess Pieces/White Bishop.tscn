@@ -1,4 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://vfbkna5xj0s4"]
+[gd_scene load_steps=7 format=3 uid="uid://vfbkna5xj0s4"]
+
+[ext_resource type="Script" path="res://Scripts/Chess Piece.gd" id="1_uiikq"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hmuq2"]
 resource_name = "Light Wood"
@@ -100,6 +102,8 @@ shadow_mesh = SubResource("ArrayMesh_hmk6u")
 
 [node name="White Bishop" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+script = ExtResource("1_uiikq")
+symbol = "b"
 
 [node name="White Bishop Q" type="MeshInstance3D" parent="."]
 transform = Transform3D(-1, 1.22465e-16, 3.89414e-07, 1.22465e-16, 1, 1.22465e-16, -3.89414e-07, 1.22465e-16, -1, 0, 0, 0)
