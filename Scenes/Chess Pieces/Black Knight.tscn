@@ -1,4 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://iwlgfjcaieih"]
+[gd_scene load_steps=7 format=3 uid="uid://iwlgfjcaieih"]
+
+[ext_resource type="Script" path="res://Scripts/Chess Piece.gd" id="1_gyxkm"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ue15r"]
 resource_name = "Medium Wood"
@@ -100,6 +102,8 @@ shadow_mesh = SubResource("ArrayMesh_k48sb")
 
 [node name="Black Knight" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+script = ExtResource("1_gyxkm")
+symbol = "N"
 
 [node name="Black Knight K" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, 0, 0, 0)

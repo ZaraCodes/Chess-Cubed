@@ -255,11 +255,9 @@ func spawn_piece(face: Enums.Face, key: String, piece: String):
 		"k": # white king
 			new_piece = load("res://Scenes/Chess Pieces/White King.tscn").instantiate()
 		"N": # black knight
-			# new_piece = load().instantiate()
-			pass
+			new_piece = load("res://Scenes/Chess Pieces/Black Knight.tscn").instantiate()
 		"n": # white knight
-			# new_piece = load().instantiate()
-			pass
+			new_piece = load("res://Scenes/Chess Pieces/White Knight.tscn").instantiate()
 		"P": # black pawn
 			# new_piece = load().instantiate()
 			pass
@@ -270,13 +268,10 @@ func spawn_piece(face: Enums.Face, key: String, piece: String):
 			new_piece = load("res://Scenes/Chess Pieces/Black Queen.tscn").instantiate()
 		"q": # white queen
 			new_piece = load("res://Scenes/Chess Pieces/White Queen.tscn").instantiate()
-			pass
 		"R": # black rook
-			# new_piece = load().instantiate()
-			pass
+			new_piece = load("res://Scenes/Chess Pieces/Black Rook.tscn").instantiate()
 		"r": # white rook
-			# new_piece = load().instantiate()
-			pass
+			new_piece = load("res://Scenes/Chess Pieces/White Rook.tscn").instantiate()
 	
 	if new_piece != null:
 		boards[face][key].add_child(new_piece)

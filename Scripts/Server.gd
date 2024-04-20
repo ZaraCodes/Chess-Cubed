@@ -32,10 +32,14 @@ func generate_cube(size: int):
 	game_state[Enums.Face.YUP]["2_1"] = "B"
 	#game_state[Enums.Face.YUP]["3_1"] = "B"
 	#game_state[Enums.Face.YUP]["4_1"] = "B"
+	game_state[Enums.Face.YUP]["4_5"] = "n"
+	game_state[Enums.Face.YUP]["5_4"] = "N"
 	game_state[Enums.Face.YUP]["5_1"] = "B"
 	game_state[Enums.Face.YUP]["6_1"] = "K"
 	game_state[Enums.Face.YUP]["6_6"] = "b"
 	game_state[Enums.Face.YUP]["7_1"] = "B"
+	game_state[Enums.Face.YUP]["2_5"] = "R"
+	game_state[Enums.Face.YUP]["4_4"] = "r"
 
 
 func load_piece_data(symbol: String):
@@ -50,8 +54,11 @@ func load_piece_data(symbol: String):
 func load_default_pieces():
 	load_piece_data("b")
 	load_piece_data("k")
+	load_piece_data("q")
+	load_piece_data("n")
+	load_piece_data("r")
 
-
+#region rotations ono
 func rotate_slice(axis: Enums.SliceAxis, slice_index: int, direction: int):
 	if axis == Enums.SliceAxis.X:
 		if direction > 0:
@@ -285,7 +292,7 @@ func rotate_slice_z_negative(slice: int):
 		new_state[Enums.Face.ZUP] = rotate_face_right(game_state[Enums.Face.ZUP])
 	
 	game_state = new_state
-
+#endregion
 
 func start_server():
 	if port > 0:

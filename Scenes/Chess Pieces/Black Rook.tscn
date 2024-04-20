@@ -1,4 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://bn4g26vhhs6cs"]
+[gd_scene load_steps=7 format=3 uid="uid://bn4g26vhhs6cs"]
+
+[ext_resource type="Script" path="res://Scripts/Chess Piece.gd" id="1_lqcp2"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4b532"]
 resource_name = "Medium Wood"
@@ -100,6 +102,8 @@ shadow_mesh = SubResource("ArrayMesh_sahjf")
 
 [node name="Black Rook" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+script = ExtResource("1_lqcp2")
+symbol = "R"
 
 [node name="Black Rook K" type="MeshInstance3D" parent="."]
 mesh = SubResource("ArrayMesh_w5ekc")

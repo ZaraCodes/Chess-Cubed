@@ -1,4 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://byavbastvkjqp"]
+[gd_scene load_steps=7 format=3 uid="uid://byavbastvkjqp"]
+
+[ext_resource type="Script" path="res://Scripts/Chess Piece.gd" id="1_3xc78"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mgx1c"]
 resource_name = "Light Wood"
@@ -100,6 +102,8 @@ shadow_mesh = SubResource("ArrayMesh_ffpij")
 
 [node name="White Rook" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+script = ExtResource("1_3xc78")
+symbol = "r"
 
 [node name="White Rook Q" type="MeshInstance3D" parent="."]
 mesh = SubResource("ArrayMesh_apsuk")
