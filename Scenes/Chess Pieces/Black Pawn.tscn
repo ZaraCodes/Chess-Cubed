@@ -1,4 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://itakqu8uvflh"]
+[gd_scene load_steps=7 format=3 uid="uid://itakqu8uvflh"]
+
+[ext_resource type="Script" path="res://Scripts/Chess Piece.gd" id="1_tfkmg"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i4qgq"]
 resource_name = "Medium Wood"
@@ -100,6 +102,8 @@ shadow_mesh = SubResource("ArrayMesh_4q4gd")
 
 [node name="Black Pawn" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+script = ExtResource("1_tfkmg")
+symbol = "P"
 
 [node name="Black Pawn 5" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 0, 0, 0)

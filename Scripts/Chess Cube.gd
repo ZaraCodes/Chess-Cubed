@@ -226,18 +226,21 @@ func check_game_state():
 				continue
 			var tile = boards[face][tile_key]
 			if tile.piece != null:
-				if tile.piece.symbol != game_state_cache[face][tile_key]:
-					if game_state_cache[face][tile_key] == "":
-						print_rich("[color=cyan][b]!! FACE %s WE HAVE TO DELETE THE '%s' ON %s TO SYNC !!" % [face, tile.piece.symbol, tile_key])
-						tile.piece.free()
-					else:
-						print_rich("[color=cyan][b]!! FACE %s WE HAVE TO REPLACE THE '%s' ON %s TO WITH %s!!" % [face, tile.piece.symbol, tile_key, game_state_cache[face][tile_key]])
+				if game_state_cache[face][tile_key] == null:
+					print_rich("[color=cyan][b]!! FACE %s WE HAVE TO DELETE THE '%s' ON %s TO SYNC !!" % [face, tile.piece.symbol, tile_key])
+					tile.piece.free()
+					continue
+				if game_state_cache[face][tile_key]["symbol"] != tile.piece.symbol:
+					print_rich("[color=cyan][b]!! FACE %s WE HAVE TO REPLACE THE '%s' ON %s TO WITH %s!!" % [face, tile.piece.symbol, tile_key, game_state_cache[face][tile_key]])
+					tile.piece.free()
+					spawn_piece(face, tile_key, game_state_cache[face][tile_key]["symbol"])
+					continue
 				else:
 					pass
 			else:
-				if game_state_cache[face][tile_key] != "":
-					print_rich("[color=cyan][b]!! FACE %s WE HAVE TO SPAWN A '%s' ON %s" % [face, game_state_cache[face][tile_key], tile_key])
-					spawn_piece(face, tile_key, game_state_cache[face][tile_key])
+				if game_state_cache[face][tile_key] != null:
+					print_rich("[color=cyan][b]!! FACE %s WE HAVE TO SPAWN A '%s' ON %s" % [face, game_state_cache[face][tile_key]["symbol"], tile_key])
+					spawn_piece(face, tile_key, game_state_cache[face][tile_key]["symbol"])
 
 
 func spawn_piece(face: Enums.Face, key: String, piece: String):
@@ -259,10 +262,10 @@ func spawn_piece(face: Enums.Face, key: String, piece: String):
 		"n": # white knight
 			new_piece = load("res://Scenes/Chess Pieces/White Knight.tscn").instantiate()
 		"P": # black pawn
-			# new_piece = load().instantiate()
+			new_piece = load("res://Scenes/Chess Pieces/Black Pawn.tscn").instantiate()
 			pass
 		"p": # white pawn
-			# new_piece = load().instantiate()
+			new_piece = load("res://Scenes/Chess Pieces/White Pawn.tscn").instantiate()
 			pass
 		"Q": # black queen
 			new_piece = load("res://Scenes/Chess Pieces/Black Queen.tscn").instantiate()
@@ -307,8 +310,12 @@ func _on_face_selector_item_selected(index):
 			boards[index][tile_pos].selected = true
 
 
-func cache_new_game_state(new_state: Dictionary):
-	game_state_cache = new_state
+func set_new_game_state(new_state: Dictionary):
+	if turning:
+		game_state_cache = new_state
+	else:
+		game_state_cache = new_state
+		check_game_state()
 
 
 func on_tile_hovered(coords: Vector2i):
@@ -341,7 +348,7 @@ func _ready():
 	
 	Client.client_ref.slice_move.connect(start_remote_slice_turn)
 	slice_turned.connect(Client.client_ref.on_cube_slice_turned)
-	Client.client_ref.new_game_state.connect(cache_new_game_state)
+	Client.client_ref.new_game_state.connect(set_new_game_state)
 	Client.client_ref.possible_moves_received.connect(on_possible_moves_received)
 
 

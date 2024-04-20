@@ -76,6 +76,8 @@ func handle_add_player(message: Dictionary):
 	if message["result"] == Enums.AddPlayerResult.SUCCESS:
 		hide_name_window.emit()
 		show_chat_window.emit()
+	if message.has("game_state"):
+		new_game_state.emit(message["game_state"])
 
 func handle_player_count_check(message: Dictionary):
 	if not message.has("result"):
@@ -111,9 +113,13 @@ func handle_incoming_chat_message(message: Dictionary):
 	send_chat_message.emit(message["message"])
 
 func handle_incoming_game_state_message(message: Dictionary):
-	if not message.has("move_type") or not message.has("move_data"):
+	if not message.has("move_type"):
 		return
-	
+	if not message.has("move_data"):
+		if message["move_type"] == Enums.MoveType.NONE:
+			if message.has("new_state"):
+				new_game_state.emit(message["new_state"])
+		return
 	# check game state with what was sent
 	
 	if message["move_type"] == Enums.MoveType.SLICE:

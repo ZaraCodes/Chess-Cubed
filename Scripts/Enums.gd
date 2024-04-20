@@ -40,7 +40,8 @@ enum ChatMessageResult {
 
 enum MoveType {
 	SLICE,
-	NORMAL
+	NORMAL,
+	NONE
 }
 
 enum SliceAxis {

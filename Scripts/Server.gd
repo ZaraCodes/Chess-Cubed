@@ -26,20 +26,22 @@ func generate_cube(size: int):
 	for x in range(size):
 		for y in range(size):
 			for side in game_state.keys():
-				game_state[side]["%s_%s" % [x, y]] = ""
-	game_state[Enums.Face.YUP]["0_1"] = "B"
-	game_state[Enums.Face.YUP]["1_1"] = "k"
-	game_state[Enums.Face.YUP]["2_1"] = "B"
+				game_state[side]["%s_%s" % [x, y]] = null
+	game_state[Enums.Face.YUP]["0_1"] = { "symbol": "B", "moves": 0 }
+	game_state[Enums.Face.YUP]["1_1"] = { "symbol": "k", "moves": 0 }
+	game_state[Enums.Face.XUP]["1_6"] = { "symbol": "P", "moves": 0 }
+	game_state[Enums.Face.XUP]["6_3"] = { "symbol": "p", "moves": 1 }
+	game_state[Enums.Face.YUP]["2_1"] = { "symbol": "B", "moves": 0 }
 	#game_state[Enums.Face.YUP]["3_1"] = "B"
 	#game_state[Enums.Face.YUP]["4_1"] = "B"
-	game_state[Enums.Face.YUP]["4_5"] = "n"
-	game_state[Enums.Face.YUP]["5_4"] = "N"
-	game_state[Enums.Face.YUP]["5_1"] = "B"
-	game_state[Enums.Face.YUP]["6_1"] = "K"
-	game_state[Enums.Face.YUP]["6_6"] = "b"
-	game_state[Enums.Face.YUP]["7_1"] = "B"
-	game_state[Enums.Face.YUP]["2_5"] = "R"
-	game_state[Enums.Face.YUP]["4_4"] = "r"
+	game_state[Enums.Face.YUP]["4_5"] = { "symbol": "n", "moves": 0 }
+	game_state[Enums.Face.YUP]["5_4"] = { "symbol": "N", "moves": 0 }
+	game_state[Enums.Face.YUP]["5_1"] = { "symbol": "B", "moves": 0 }
+	game_state[Enums.Face.YUP]["6_1"] = { "symbol": "K", "moves": 0 }
+	game_state[Enums.Face.YUP]["6_6"] = { "symbol": "b", "moves": 0 }
+	game_state[Enums.Face.YUP]["7_1"] = { "symbol": "B", "moves": 0 }
+	game_state[Enums.Face.YUP]["2_5"] = { "symbol": "R", "moves": 0 }
+	game_state[Enums.Face.YUP]["4_4"] = { "symbol": "r", "moves": 0 }
 
 
 func load_piece_data(symbol: String):
@@ -57,6 +59,8 @@ func load_default_pieces():
 	load_piece_data("q")
 	load_piece_data("n")
 	load_piece_data("r")
+	load_piece_data("p")
+
 
 #region rotations ono
 func rotate_slice(axis: Enums.SliceAxis, slice_index: int, direction: int):
@@ -319,7 +323,7 @@ func _on_message_received(peer_id: int, message: Variant):
 		elif message["type"] == Enums.MessageType.MOVE:
 			handle_move_message(peer_id, message)
 		elif message["type"] == Enums.MessageType.POSSIBLE_MOVES_REQUEST:
-			handle_possible_moves_request(message)
+			handle_possible_moves_request(peer_id, message)
 
 
 func handle_player_exists(peer_id: int, message: Variant):
@@ -356,7 +360,17 @@ func handle_add_player(peer_id: int, message: Variant):
 		response = { "type": Enums.MessageType.ADD_PLAYER, "result": Enums.AddPlayerResult.TOO_MANY_PLAYERS, "player_name": message["player_name"] }
 	else:
 		add_player(message["player_name"], peer_id, message["role"])
-		response = { "type": Enums.MessageType.ADD_PLAYER, "result": Enums.AddPlayerResult.SUCCESS, "player_name": message["player_name"] }
+		response = {
+			"type": Enums.MessageType.ADD_PLAYER,
+			"result": Enums.AddPlayerResult.SUCCESS,
+			"player_name": message["player_name"]
+			}
+		wss.send_to_peer(peer_id, response)
+		response = {
+			"type": Enums.MessageType.GAME_STATE,
+			"move_type": Enums.MoveType.NONE,
+			"new_state": game_state
+		}
 	wss.send_to_peer(peer_id, response)
 
 
@@ -389,7 +403,7 @@ func handle_move_message(peer_id: int, message: Variant):
 		rotate_slice(message["move_data"]["axis"], message["move_data"]["slice_index"], message["move_data"]["direction"])
 		var new_game_state := {
 			"type": Enums.MessageType.GAME_STATE,
-			"old_state": old_state,
+			#"old_state": old_state,
 			"new_state": game_state,
 			"move_type": Enums.MoveType.SLICE,
 			"move_data": {
@@ -403,7 +417,7 @@ func handle_move_message(peer_id: int, message: Variant):
 		print("MVOE TYPE?????? WHY ARE YOU NOT SLICE??????????")
 
 
-func handle_possible_moves_request(message: Dictionary):
+func handle_possible_moves_request(peer_id: int, message: Dictionary):
 	if not message.has("data"):
 		print_rich("[color=red]Data missing from possible moves request")
 		return
@@ -417,30 +431,36 @@ func handle_possible_moves_request(message: Dictionary):
 	var board_position = message["data"]["board_position"]
 	var face = message["data"]["face"]
 	var piece = game_state[face][board_position]
-	if piece == "":
+	if piece == null:
 		print_rich("[color=blue]Tile is empty")
 		return
 	
-	var lowercase: bool = piece == piece.to_lower()
-	piece = piece.to_lower()
-	if piece not in pieces.keys():
-		print_rich("[color=red] '%s' Unknown piece" % piece)
+	var lowercase: bool = piece["symbol"] == piece["symbol"].to_lower()
+	piece["symbol"] = piece["symbol"].to_lower()
+	if piece["symbol"].to_lower() not in pieces.keys():
+		print_rich("[color=red] '%s' Unknown piece" % piece["symbol"])
 		return
 	
-	var piece_data = pieces[piece]
+	var piece_data = pieces[piece["symbol"]]
 	var board_x := int(board_position.split("_")[0])
 	var board_y := int(board_position.split("_")[1])
 
 	var possible_moves := []
-	for possible_move in piece_data["moves"]:
+	var moves_key: String
+	if piece["moves"] == 0 and piece_data.has("start_moves"):
+		moves_key = "start_moves"
+	else:
+		moves_key = "moves"
+
+	for possible_move in piece_data[moves_key]:
 		# print_rich("[color=yellow][SERVER]: [color=white]" + str(possible_move))
 		var x = board_x + possible_move[0]
 		var y = board_y + possible_move[1]
 		
 		while x < cube_size and x >= 0 and y < cube_size and y >= 0:
 			var new_tile = "%s_%s" % [x, y]
-			if game_state[face][new_tile] != "":
-				var new_piece = game_state[face][new_tile]
+			if game_state[face][new_tile] != null:
+				var new_piece = game_state[face][new_tile]["symbol"]
 				var new_piece_lowercase: bool = new_piece == new_piece.to_lower()
 				
 				if new_piece_lowercase == lowercase:
@@ -463,7 +483,7 @@ func handle_possible_moves_request(message: Dictionary):
 			"face": face
 		}]
 	}
-	send_to_players(response)
+	wss.send_to_peer(peer_id, response)
 
 
 func _on_client_connected(peer_id: int):
