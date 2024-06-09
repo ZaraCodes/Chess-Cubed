@@ -322,11 +322,11 @@ func on_tile_hovered(coords: Vector2i):
 	tile_coord_label.text = "%s %s" % [coords.x, coords.y]
 
 
-func on_possible_moves_received(data: Array):
-	for face_data in data:
-		for tile in face_data["possible_moves"]:
-			boards[face_data["face"]][tile].selected = true
-			highlighted_tiles.append(boards[face_data["face"]][tile])
+func on_possible_moves_received(data: Dictionary):
+	for face in data.keys():
+		for tile in data[face]:
+			boards[face][tile].selected = true
+			highlighted_tiles.append(boards[face][tile])
 
 
 func unhighlight_tiles():

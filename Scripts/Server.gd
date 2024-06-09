@@ -442,16 +442,27 @@ func handle_possible_moves_request(peer_id: int, message: Dictionary):
 		return
 	
 	var piece_data = pieces[piece["symbol"]]
+	var response_data := {}
+	response_data = get_possible_moves(face, piece_data, piece, board_position, lowercase, response_data)
+	
+	var response := {
+		"type": Enums.MessageType.POSSIBLE_MOVES_REQUEST,
+		"data": response_data
+	}
+	wss.send_to_peer(peer_id, response)
+
+
+func get_possible_moves(face, piece_data, piece, board_position, lowercase: bool, response_data: Dictionary):
+	if not response_data.has(face):
+		response_data[face] = []
 	var board_x := int(board_position.split("_")[0])
 	var board_y := int(board_position.split("_")[1])
-
-	var possible_moves := []
 	var moves_key: String
+	
 	if piece["moves"] == 0 and piece_data.has("start_moves"):
 		moves_key = "start_moves"
 	else:
 		moves_key = "moves"
-
 	for possible_move in piece_data[moves_key]:
 		# print_rich("[color=yellow][SERVER]: [color=white]" + str(possible_move))
 		var x = board_x + possible_move[0]
@@ -465,26 +476,17 @@ func handle_possible_moves_request(peer_id: int, message: Dictionary):
 				
 				if new_piece_lowercase == lowercase:
 					break
-				if new_tile not in possible_moves:
-					possible_moves.append(new_tile)
+				if new_tile not in response_data[face]:
+					response_data[face].append(new_tile)
 				break
 			
-			if new_tile not in possible_moves:
-				possible_moves.append(new_tile)
+			if new_tile not in response_data[face]:
+				response_data[face].append(new_tile)
 			if not piece_data["infinite_distance"]:
 				break
 			x += possible_move[0]
 			y += possible_move[1]
-	
-	var response := {
-		"type": Enums.MessageType.POSSIBLE_MOVES_REQUEST,
-		"data": [{
-			"possible_moves": possible_moves,
-			"face": face
-		}]
-	}
-	wss.send_to_peer(peer_id, response)
-
+	return response_data
 
 func _on_client_connected(peer_id: int):
 	print("Client %s connected" % peer_id)
